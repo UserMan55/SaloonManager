@@ -26,11 +26,17 @@ import {
 interface Player {
     id: string;
     fullName: string;
-    nickname?: string;
+    // nickname removed
     phone?: string;
     handicap?: number;
     salonId: string;
     city?: string;
+    photoURL?: string; // Added photo support
+    stats: {
+        matches: number;
+        wins: number;
+        avg: number;
+    };
 }
 
 interface PoolUser {
@@ -40,6 +46,7 @@ interface PoolUser {
     phone?: string;
     city?: string;
     salonId?: string;
+    photoURL?: string; // Added photo support
 }
 
 interface PlayersPageProps {
@@ -133,7 +140,8 @@ export default function PlayersPage({ forcedSalonId }: PlayersPageProps) {
                             email: data.email,
                             phone: data.phone,
                             city: data.city,
-                            salonId: data.salonId
+                            salonId: data.salonId,
+                            photoURL: data.photoURL // Fetch photoURL
                         });
                     });
                     setPoolUsers(users);
@@ -152,7 +160,6 @@ export default function PlayersPage({ forcedSalonId }: PlayersPageProps) {
         try {
             await addDoc(collection(db, 'players'), {
                 fullName,
-                nickname,
                 phone,
                 handicap: Number(handicap) || 0,
                 salonId: salonId,
@@ -168,29 +175,33 @@ export default function PlayersPage({ forcedSalonId }: PlayersPageProps) {
 
     const handleImportPoolUser = async (user: PoolUser) => {
         if (!salonId) return;
+        // Kullanıcıya onay sor (Tarayıcı native confirm)
         if (!confirm(`${user.fullName} adlı oyuncuyu salonunuza eklemek istiyor musunuz?`)) return;
 
         try {
             await addDoc(collection(db, 'players'), {
                 fullName: user.fullName,
-                nickname: '',
                 phone: user.phone || '',
                 email: user.email || '',
                 userId: user.id,
                 handicap: 0,
                 salonId: salonId,
                 city: salonCity,
+                photoURL: user.photoURL || null, // Save photoURL
                 createdAt: serverTimestamp(),
                 stats: { matches: 0, wins: 0, avg: 0 }
             });
 
-            const userRef = doc(db, 'users', user.id);
-            await updateDoc(userRef, {
-                salonId: salonId,
-                salonName: salonName
-            });
+            try {
+                const userRef = doc(db, 'users', user.id);
+                await updateDoc(userRef, {
+                    salonId: salonId,
+                    salonName: salonName
+                });
+            } catch (linkError) {
+                console.log("Kullanıcı profili güncellenemedi (Yetki sorunu olabilir), ancak oyuncu listeye eklendi.", linkError);
+            }
 
-            alert(`${user.fullName} başarıyla salona eklendi.`);
             setIsModalOpen(false);
         } catch (error) {
             console.error("İçe aktarma hatası:", error);
@@ -206,14 +217,13 @@ export default function PlayersPage({ forcedSalonId }: PlayersPageProps) {
 
     const resetForm = () => {
         setFullName('');
-        setNickname('');
+        // setNickname removed
         setPhone('');
         setHandicap('');
     };
 
     const filteredPlayers = players.filter(player =>
-        player.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        player.nickname?.toLowerCase().includes(searchTerm.toLowerCase())
+        player.fullName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const filteredPoolUsers = poolUsers.filter(u =>
@@ -353,12 +363,16 @@ export default function PlayersPage({ forcedSalonId }: PlayersPageProps) {
                                                 filteredPoolUsers.map(poolUser => (
                                                     <div key={poolUser.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 group transition-all">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-500/30">
-                                                                {poolUser.fullName.substring(0, 1)}
+                                                            <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-500/30 overflow-hidden">
+                                                                {poolUser.photoURL ? (
+                                                                    <img src={poolUser.photoURL} alt={poolUser.fullName} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    poolUser.fullName.substring(0, 1)
+                                                                )}
                                                             </div>
                                                             <div>
                                                                 <p className="text-sm font-medium text-slate-200">{poolUser.fullName}</p>
-                                                                <p className="text-[10px] text-slate-500">{poolUser.city} • {poolUser.salonId ? 'Bir Salonda Kayıtlı' : 'Salonsuz'}</p>
+                                                                <p className="text-[10px] text-slate-500">{poolUser.city}</p>
                                                             </div>
                                                         </div>
                                                         <Button
@@ -419,8 +433,7 @@ export default function PlayersPage({ forcedSalonId }: PlayersPageProps) {
                                 <thead>
                                     <tr className="border-b border-slate-800/50 bg-slate-800/20">
                                         <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Oyuncu</th>
-                                        <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Takma Ad</th>
-                                        <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Seviye (HCP)</th>
+                                        <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Genel Ortalama</th>
                                         <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">İşlemler</th>
                                     </tr>
                                 </thead>
@@ -429,8 +442,12 @@ export default function PlayersPage({ forcedSalonId }: PlayersPageProps) {
                                         <tr key={player.id} className="group hover:bg-white/5 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-purple-500/20">
-                                                        {player.fullName.charAt(0)}
+                                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-purple-500/20 overflow-hidden">
+                                                        {player.photoURL ? (
+                                                            <img src={player.photoURL} alt={player.fullName} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            player.fullName.charAt(0)
+                                                        )}
                                                     </div>
                                                     <div>
                                                         <div className="font-medium text-white">{player.fullName}</div>
@@ -438,12 +455,9 @@ export default function PlayersPage({ forcedSalonId }: PlayersPageProps) {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-400">
-                                                {player.nickname || '—'}
-                                            </td>
                                             <td className="px-6 py-4">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">
-                                                    {player.handicap}
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+                                                    {player.stats?.avg ? player.stats.avg.toFixed(3) : '0.000'}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">

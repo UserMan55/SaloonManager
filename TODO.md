@@ -17,13 +17,13 @@ Bu dosya, projenin mevcut durumunu, eksikliklerini ve planlanan geliştirmeleri 
 
 ## 🏆 Turnuva Modülü (Ana Özellik)
 
-- [ ] **Turnuva Oluşturma:**
-    - Turnuva adı, tipi (Eleme, Lig vb.), tarih, katılım ücreti gibi alanları içeren form.
-- [ ] **Eşleşme Sistemi (Bracket):**
-    - Oyuncuların otomatik veya manuel eşleştirilmesi.
-    - Turnuva ağacı (bracket) görselleştirmesi.
-- [ ] **Maç Yönetimi:**
-    - Maç sonuçlarını girme, kazananı belirleme ve bir üst tura taşıma.
+- [x] **Turnuva Oluşturma:**
+    - Turnuva adı, tipi (Eleme, Lig vb.), tarih, katılım ücreti gibi alanları içeren form. (Tamamlandı)
+- [x] **Eşleşme Sistemi (Bracket):**
+    - Oyuncuların otomatik veya manuel eşleştirilmesi. (Tamamlandı - Eleme Usulü)
+    - Turnuva ağacı (bracket) görselleştirmesi. (Tamamlandı - Liste görünümü olarak)
+- [x] **Maç Yönetimi:**
+    - Maç sonuçlarını girme, kazananı belirleme ve bir üst tura taşıma. (Tamamlandı)
 
 ## ⚙️ Ayarlar ve Profil Yönetimi
 
