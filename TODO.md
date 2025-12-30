@@ -1,3 +1,5 @@
+MERHABA BEN İLHAMİ
+
 # 🎱 SaloonManager Proje Yapılacaklar Listesi
 
 Bu dosya, projenin mevcut durumunu, eksikliklerini ve planlanan geliştirmeleri takip etmek için oluşturulmuştur.
