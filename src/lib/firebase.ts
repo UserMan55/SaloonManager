@@ -18,4 +18,8 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+if (typeof window !== 'undefined') {
+    console.log("🔥 Firebase Connected to Project ID:", firebaseConfig.projectId);
+}
+
 export { app, auth, db };
